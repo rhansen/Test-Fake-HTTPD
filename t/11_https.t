@@ -41,6 +41,20 @@ describe 'run_https_server' => sub {
         is $res->header('Content-Type') => 'text/plain';
         is $res->content => 'Hello World';
     };
+
+    it 'aborted TLS handshake does not break server' => sub {
+        my $ua = LWP::UserAgent->new;
+        my $res = $ua->get($httpd->endpoint);
+        is $res->code => 500;
+        $ua = LWP::UserAgent->new(ssl_opts => {
+            SSL_verify_mode => 0,
+            verify_hostname => 0,
+        });
+        $res = $ua->get($httpd->endpoint);
+        is $res->code => 200;
+        is $res->header('Content-Type') => 'text/plain';
+        is $res->content => 'Hello World';
+    };
 };
 
 done_testing;

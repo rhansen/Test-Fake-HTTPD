@@ -93,9 +93,12 @@ sub run {
                           $self->port || '<default>',
                           $@ eq '' ? '' : ": $@")) unless $d;
 
-            $d->accept; # wait for port check from parent process
-
-            while (my $c = $d->accept) {
+            while (1) {
+                # HTTP::Daemon::SSL::accept returns undef if the TLS handshake does not complete
+                # successfully (e.g., the client performs a port test, or the client rejects the
+                # server's certificate).  Instead of breaking from the loop, just wait for another
+                # connection.
+                my $c = $d->accept or next;
                 while (my $req = $c->get_request) {
                     my $res = $self->_to_http_res($app->($req));
                     $c->send_response($res);
