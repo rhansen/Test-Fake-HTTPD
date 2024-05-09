@@ -93,9 +93,10 @@ sub run {
                           $self->port || '<default>',
                           $@ eq '' ? '' : ": $@")) unless $d;
 
-            $d->accept; # wait for port check from parent process
-
-            while (my $c = $d->accept) {
+            while (1) {
+                # accept can return undef if TLS handshake fails (e.g., port test or client rejects
+                # cert).
+                my $c = $d->accept or next;
                 while (my $req = $c->get_request) {
                     my $res = $self->_to_http_res($app->($req));
                     $c->send_response($res);
